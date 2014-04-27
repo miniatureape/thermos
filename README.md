@@ -7,7 +7,7 @@ Sets up a basic nginx in front of gunicorn with supervisor managing.
 
 Do not use for production sites.
 
-It's only been testing on Ubuntu 13, 64 bit.
+It's only been tested on Ubuntu 13, 64 bit.
 
 Usage
 =====
