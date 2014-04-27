@@ -1,0 +1,55 @@
+sudo apt-get update
+
+sudo apt-get install git
+sudo apt-get install python-pip
+sudo apt-get install nginx
+sudo apt-get install mongodb
+sudo apt-get install gunicorn
+sudo apt-get install wget
+
+sudo pip install supervisord
+sudo /etc/init.d/supervisor stop
+
+sudo pip install virtualenv
+
+sudo mkdir -p /var/www/{{ appname }}/src
+sudo mkdir -p /var/www/{{ appname }}/app
+sudo mkdir -p /var/www/{{ appname }}/
+sudo mkdir -p /var/log/{{ appname }}/
+
+virtualenv /var/www/{{ appname }}/env
+source /var/www/{{ appname }}/env/bin/activate
+
+git clone {{ gitrepo }} /var/www/src/{{ appname }}
+
+pip install -r /var/www/src/{{ appname}}/requirements.txt
+
+SUPERVISOR_CONF=$(cat <<EOF
+[program:{{ appname }}]
+command=/var/www/env/{{ appname }}/local/bin/gunicorn {{ appname }}:app
+directory=/var/www/{{ appname }}/app
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/{{ appname }}/gunicorn.log
+redirect_stderr=true
+stopsignal=QUIT
+EOF
+)
+
+NGINX_CONF=$(cat <<EOF
+server {
+    location / {
+    error_log /var/log/nginx/mvsserver.error.log;
+        proxy_pass http://127.0.0.1:8000;
+    }
+}
+EOF
+)
+
+echo "$SUPERVISOR_CONF" >> /etc/supervisor/conf.d/{{ appname }}.conf
+echo "$NGINX_CONF" >> /etc/nginx/sites-available/{{ appname }}.conf
+ln -s /etc/nginx/sites-available/{{ appname }}.conf  /etc/nginx/sites-enabled/{{ appname }}.conf
+
+sudo /etc/init.d/supervisor start
+sudo supervisorctl reload
+sudo /etc/init.d/nginx restart
