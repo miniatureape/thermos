@@ -6,8 +6,8 @@ sudo apt-get install nginx
 sudo apt-get install mongodb
 sudo apt-get install gunicorn
 sudo apt-get install wget
+sudo apt-get install supervisor
 
-sudo pip install supervisord
 sudo /etc/init.d/supervisor stop
 
 sudo pip install virtualenv
@@ -20,13 +20,14 @@ sudo mkdir -p /var/log/{{ appname }}/
 virtualenv /var/www/{{ appname }}/env
 source /var/www/{{ appname }}/env/bin/activate
 
-git clone {{ gitrepo }} /var/www/src/{{ appname }}
+git clone {{ gitrepo }} /var/www/{{ appname }}/src
+cp -r /var/www/{{ appname }}/src/* /var/www/{{ appname }}/app
 
-pip install -r /var/www/src/{{ appname}}/requirements.txt
+pip install -r /var/www/{{ appname }}/src/requirements.txt
 
 SUPERVISOR_CONF=$(cat <<EOF
 [program:{{ appname }}]
-command=/var/www/env/{{ appname }}/local/bin/gunicorn {{ appname }}:app
+command=/var/www/{{ appname }}/env/bin/gunicorn app:app
 directory=/var/www/{{ appname }}/app
 autostart=true
 autorestart=true
@@ -46,9 +47,10 @@ server {
 EOF
 )
 
-echo "$SUPERVISOR_CONF" >> /etc/supervisor/conf.d/{{ appname }}.conf
-echo "$NGINX_CONF" >> /etc/nginx/sites-available/{{ appname }}.conf
+echo "$SUPERVISOR_CONF" > /etc/supervisor/conf.d/{{ appname }}.conf
+echo "$NGINX_CONF" > /etc/nginx/sites-available/{{ appname }}.conf
 ln -s /etc/nginx/sites-available/{{ appname }}.conf  /etc/nginx/sites-enabled/{{ appname }}.conf
+rm /etc/nginx/sites-available/default.conf
 
 sudo /etc/init.d/supervisor start
 sudo supervisorctl reload
