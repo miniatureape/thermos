@@ -3,7 +3,6 @@ sudo apt-get update
 sudo apt-get install git
 sudo apt-get install python-pip
 sudo apt-get install nginx
-sudo apt-get install mongodb
 sudo apt-get install gunicorn
 sudo apt-get install wget
 sudo apt-get install supervisor
@@ -40,7 +39,7 @@ EOF
 NGINX_CONF=$(cat <<EOF
 server {
     location / {
-    error_log /var/log/nginx/mvsserver.error.log;
+    error_log /var/log/nginx/{{ appname }}.error.log;
         proxy_pass http://127.0.0.1:8000;
     }
 }
